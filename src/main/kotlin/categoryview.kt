@@ -27,6 +27,13 @@ class DBController : Controller() {
         Database.connect("jdbc:sqlite:file:data.sqlite", driver = "org.sqlite.JDBC")
         TransactionManager.manager.defaultIsolationLevel = Connection.TRANSACTION_SERIALIZABLE
     }
+
+    fun deleteCategory(model: CategoryModel) {
+        transaction {
+            model.item.delete()
+        }
+        categories.remove(model)
+    }
 }
 
 
@@ -38,12 +45,25 @@ class CategoryEditor : View("Categories") {
     override val root = borderpane {
         categories = dbController.categories
 
-        center = tableview<CategoryModel> {
-            categoryTable = editModel
-            items = categories
+        center = vbox {
+            buttonbar {
+                button("DELETE SELECTED") {
+                    action {
+                        val model = categoryTable.tableView.selectedItem
+                        when (model) {
+                            null -> return@action
+                            else -> dbController.deleteCategory(model)
+                        }
+                    }
+                }
+            }
+            tableview<CategoryModel> {
+                categoryTable = editModel
+                items = categories
 
-            column("Name", CategoryModel::name)
-            column("Description", CategoryModel::description)
+                column("Name", CategoryModel::name)
+                column("Description", CategoryModel::description)
+            }
         }
     }
 }
