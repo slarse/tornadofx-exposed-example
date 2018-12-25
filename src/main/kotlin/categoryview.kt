@@ -78,8 +78,11 @@ class CategoryEditor : View("Categories") {
                 categoryTable = editModel
                 items = categories
 
-                column("Name", CategoryModel::name)
-                column("Description", CategoryModel::description)
+                enableCellEditing()
+                enableDirtyTracking()
+
+                column("Name", CategoryModel::name).makeEditable()
+                column("Description", CategoryModel::description).makeEditable()
             }
         }
         right = form {
