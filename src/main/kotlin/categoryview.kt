@@ -7,6 +7,8 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 
 
+typealias ModelToDirtyState = Map.Entry<CategoryModel, TableColumnDirtyState<CategoryModel>>
+
 class CategoryModel : ItemViewModel<Category>() {
     val name = bind(Category::name)
     val description = bind(Category::description)
@@ -48,6 +50,15 @@ class DBController : Controller() {
                 })
         }
     }
+
+    fun commitDirty(modelDirtyMappings: Sequence<ModelToDirtyState>) {
+        transaction {
+            modelDirtyMappings.filter { it.value.isDirty }.forEach {
+                it.key.commit()     // commit value to database
+                it.value.commit()   // clear dirty state
+            }
+        }
+    }
 }
 
 
@@ -64,6 +75,16 @@ class CategoryEditor : View("Categories") {
 
         center = vbox {
             buttonbar {
+                button("COMMIT") {
+                    action {
+                        dbController.commitDirty(categoryTable.items.asSequence())
+                    }
+                }
+                button("ROLLBACK") {
+                    action {
+                        categoryTable.rollback()
+                    }
+                }
                 button("DELETE SELECTED") {
                     action {
                         val model = categoryTable.tableView.selectedItem
