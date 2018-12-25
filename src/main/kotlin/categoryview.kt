@@ -1,5 +1,6 @@
 import tornadofx.*
 import javafx.collections.ObservableList
+import javafx.scene.control.TextField
 import java.sql.Connection
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -34,6 +35,19 @@ class DBController : Controller() {
         }
         categories.remove(model)
     }
+
+    fun addCategory(name: String, description: String) {
+        transaction {
+            val category = Category.new {
+                this.name = name
+                this.description = description
+            }
+            categories.add(
+                CategoryModel().apply {
+                    item = category
+                })
+        }
+    }
 }
 
 
@@ -41,6 +55,9 @@ class CategoryEditor : View("Categories") {
     val dbController: DBController by inject()
     var categoryTable: TableViewEditModel<CategoryModel> by singleAssign()
     var categories: ObservableList<CategoryModel> by singleAssign()
+
+    var nameField: TextField by singleAssign()
+    var descriptionField: TextField by singleAssign()
 
     override val root = borderpane {
         categories = dbController.categories
@@ -63,6 +80,29 @@ class CategoryEditor : View("Categories") {
 
                 column("Name", CategoryModel::name)
                 column("Description", CategoryModel::description)
+            }
+        }
+        right = form {
+            fieldset {
+                field("Name") {
+                    textfield {
+                        nameField = this
+                    }
+                }
+            }
+            fieldset {
+                field("Description") {
+                    textfield {
+                        descriptionField = this
+                    }
+                }
+            }
+            button("ADD CATEGORY") {
+                action {
+                    dbController.addCategory(nameField.text, descriptionField.text)
+                    nameField.text = ""
+                    descriptionField.text = ""
+                }
             }
         }
     }
